@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package protobolt.v1;
+
+option go_package = "github.com/SpeedyCoder/protobolt/proto/v1;protoboltpb";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+  // Mark the field as being part of the primary key.
+  bool primary_key = 75160;
+}

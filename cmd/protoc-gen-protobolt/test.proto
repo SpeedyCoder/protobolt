@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package test;
+
+option go_package=".;test";
+
+import "protobolt.proto";
+
+message User {
+  string id = 1 [(protobolt.v1.primary_key) = true];
+}
+
+message Activity {
+  int32 day = 4 [(protobolt.v1.primary_key) = true];
+  int32 year = 2 [(protobolt.v1.primary_key) = true];
+  int32 month = 3 [(protobolt.v1.primary_key) = true];
+  string user_id = 1 [(protobolt.v1.primary_key) = true];
+}
+
+message Email {
+  string user_id = 1 [(protobolt.v1.primary_key) = true];
+  EmailType type = 2 [(protobolt.v1.primary_key) = true];
+}
+
+enum EmailType {
+    EMAIL_TYPE_NONE = 0;
+    EMAIL_TYPE_WELCOME = 1;
+}
