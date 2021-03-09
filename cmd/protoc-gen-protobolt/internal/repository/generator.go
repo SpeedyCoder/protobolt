@@ -1,6 +1,7 @@
 package repository
 
 import (
+	_ "embed"
 	"fmt"
 	"sort"
 	"strings"
@@ -14,12 +15,10 @@ import (
 	protos "github.com/SpeedyCoder/protobolt/proto/v1"
 )
 
-//go:generate go-bindata -pkg repository -nometadata -o ./bindata.go ./template.tmpl
+//go:embed template.tmpl
+var templateAsset string
 
-const (
-	templateAssetName = "template.tmpl"
-	module            = "protobolt"
-)
+const module = "protobolt"
 
 // IdentifierModule validates & generates code for accessing an identifier on a message
 type IdentifierModule struct {
@@ -30,8 +29,12 @@ type IdentifierModule struct {
 }
 
 type entity struct {
-	Msg      pgs.Message
+	Name     string
 	PKFields []pgs.Field
+}
+
+func (e entity) RepositoryName() string {
+	return e.Name + "Repository"
 }
 
 // NewRepositoryModule creates a module for PG*
@@ -55,7 +58,7 @@ func (m *IdentifierModule) InitContext(c pgs.BuildContext) {
 		"package":         m.ctx.PackageName,
 		"pkFieldToString": pkFieldToString,
 	})
-	m.entityTpl = template.Must(tpl.Parse(string(MustAsset(templateAssetName))))
+	m.entityTpl = template.Must(tpl.Parse(templateAsset))
 }
 
 // Execute runs the generator
@@ -63,7 +66,7 @@ func (m *IdentifierModule) Execute(targets map[string]pgs.File, pkgs map[string]
 	for _, t := range targets {
 		m.Debugf("generating for target: %s", t.Name())
 
-		entities, err := m.generate(t)
+		entities, err := m.generateEntities(t)
 		if err != nil {
 			m.AddError(err.Error())
 			break
@@ -75,7 +78,7 @@ func (m *IdentifierModule) Execute(targets map[string]pgs.File, pkgs map[string]
 	return m.Artifacts()
 }
 
-func (m *IdentifierModule) generate(f pgs.File) ([]entity, error) {
+func (m *IdentifierModule) generateEntities(f pgs.File) ([]entity, error) {
 	if len(f.Messages()) == 0 {
 		m.Debugf("zero messages, skipping: %s", f.Name())
 		return nil, nil
@@ -84,7 +87,7 @@ func (m *IdentifierModule) generate(f pgs.File) ([]entity, error) {
 
 	for _, msg := range f.Messages() {
 
-		e := entity{Msg: msg}
+		e := entity{Name: msg.Name().String()}
 
 		for _, field := range msg.Fields() {
 			fdesc := field.Descriptor()

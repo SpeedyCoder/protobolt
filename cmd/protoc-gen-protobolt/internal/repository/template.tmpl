@@ -5,15 +5,48 @@ package {{ package .File }}
 import (
 	"strconv"
 	"strings"
+
+	"github.com/SpeedyCoder/protobolt"
 )
 
 // Ensure the import is used.
 var _ = strconv.FormatInt
 
 {{ range .Entities }}
+	type {{ .RepositoryName }} struct {
+		DB protobolt.DB
+	}
+
+	func (repo {{ .RepositoryName }}) Init() error {
+		return repo.DB.Init(&{{ .Name }}{})
+	}
+
+	func (repo {{ .RepositoryName }}) Get{{ .Name }}(e *{{ .Name }}) (*{{ .Name }}, error) {
+		if err := repo.DB.Get(e); err != nil {
+			return nil, err
+		}
+		return e, nil
+	}
+
+	func (repo {{ .RepositoryName }}) Save{{ .Name }}(e *{{ .Name }}) error {
+		return repo.DB.Save(e)
+	}
+
+	func (repo {{ .RepositoryName }}) Delete{{ .Name }}(e *{{ .Name }}) error {
+		return repo.DB.Delete(e)
+	}
+
+	func (repo {{ .RepositoryName }}) ForEach{{ .Name }}(e *{{ .Name }}, cb func(*{{ .Name }}) error) error {
+		return repo.DB.ForEach(e, func(pe protobolt.Entity) error {
+			return cb(pe.(*{{ .Name }}))
+		})
+	}
+{{ end }}
+
+{{ range .Entities }}
 	// GetProtoBoltPK returns the primary key composed
 	// from the fields marked as the being part of it.
-	func (m *{{ .Msg.Name }}) GetProtoBoltPK() []byte {
+	func (m *{{ .Name }}) GetProtoBoltPK() []byte {
 		if m == nil {
 			return nil
 		}
